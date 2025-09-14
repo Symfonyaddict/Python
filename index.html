@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fab fa-youtube"></i> YouTube Downloader</h1>
+            <p>Téléchargez vos vidéos YouTube préférées en quelques clics</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <div class="url-input-container">
+                    <input type="text" id="video-url" placeholder="Collez l'URL de la vidéo YouTube ici..." autocomplete="off">
+                    <button id="fetch-btn"><i class="fas fa-search"></i> Récupérer</button>
+                </div>
+                <div class="error-message" id="url-error"></div>
+            </section>
+
+            <section class="preview-section" id="preview-section">
+                <!-- La prévisualisation de la vidéo sera affichée ici -->
+            </section>
+
+            <section class="options-section" id="options-section">
+                <h2>Options de téléchargement</h2>
+                <div class="options-container">
+                    <div class="option-group">
+                        <label for="format-select">Format:</label>
+                        <select id="format-select">
+                            <option value="mp4">MP4 (Vidéo)</option>
+                            <option value="mp3">MP3 (Audio)</option>
+                            <option value="webm">WebM</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="quality-select">Qualité:</label>
+                        <select id="quality-select">
+                            <option value="highest">La plus haute</option>
+                            <option value="high">Haute</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="low">Basse</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="filename">Nom du fichier:</label>
+                        <input type="text" id="filename" placeholder="Nom du fichier (optionnel)">
+                    </div>
+                    <div class="option-group">
+                        <label for="destination-folder">Dossier de destination:</label>
+                        <div class="folder-select-container">
+                            <input type="text" id="destination-folder" placeholder="Chemin du dossier" readonly>
+                            <button id="browse-btn" type="button"><i class="fas fa-folder-open"></i> Parcourir</button>
+                        </div>
+                    </div>
+                </div>
+                <button id="download-btn" class="download-btn" disabled><i class="fas fa-download"></i> Télécharger</button>
+            </section>
+
+            <section class="progress-section" id="progress-section">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="download-progress"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progress-percentage">0%</span>
+                        <span id="time-remaining">Estimation: --:--</span>
+                    </div>
+                </div>
+                <div class="status-message" id="status-message">Prêt à télécharger</div>
+            </section>
+
+            <section class="history-section">
+                <h2>Historique des téléchargements</h2>
+                <div class="history-container" id="download-history">
+                    <!-- L'historique des téléchargements sera affiché ici -->
+                    <p class="empty-history">Aucun téléchargement récent</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Cette application utilise l'API YouTube pour récupérer les informations des vidéos.</p>
+            <p>Développé avec <i class="fas fa-heart"></i> | <span id="current-year"></span></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
