@@ -17,6 +17,20 @@ const filenameInput = document.getElementById('filename');
 const destinationFolderInput = document.getElementById('destination-folder');
 const browseFolderBtn = document.getElementById('browse-btn');
 const currentYear = document.getElementById('current-year');
+const themeToggle = document.getElementById('theme-toggle');
+
+// Gestion du thème (clair/sombre)
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Changer l'icône du bouton
+    const themeIcon = themeToggle.querySelector('i');
+    themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+}
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,8 +43,58 @@ document.addEventListener('DOMContentLoaded', () => {
     // Charger l'historique des téléchargements depuis le stockage local
     loadDownloadHistory();
     
+    // Initialiser le thème
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Mettre à jour l'icône du bouton de thème
+    const themeIcon = themeToggle.querySelector('i');
+    themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+    
     // Ajouter les écouteurs d'événements
     setupEventListeners();
+    
+    // Gestion de la modale pour vider le cache
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    const clearCacheModal = document.getElementById('clear-cache-modal');
+    const modalClose = document.querySelector('.modal-close');
+    const cancelClearCache = document.getElementById('cancel-clear-cache');
+    const confirmClearCache = document.getElementById('confirm-clear-cache');
+    
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener('click', () => {
+            clearCacheModal.style.display = 'block';
+        });
+    }
+    
+    // Fermer la modale avec le bouton X
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            clearCacheModal.style.display = 'none';
+        });
+    }
+    
+    // Fermer la modale avec le bouton Annuler
+    if (cancelClearCache) {
+        cancelClearCache.addEventListener('click', () => {
+            clearCacheModal.style.display = 'none';
+        });
+    }
+    
+    // Confirmer et vider le cache
+    if (confirmClearCache) {
+        confirmClearCache.addEventListener('click', function() {
+            clearAppCache();
+            clearCacheModal.style.display = 'none';
+        });
+    }
+    
+    // Fermer la modale en cliquant en dehors
+    window.addEventListener('click', (event) => {
+        if (event.target === clearCacheModal) {
+            clearCacheModal.style.display = 'none';
+        }
+    });
 });
 
 // Configuration des écouteurs d'événements
@@ -49,6 +113,9 @@ function setupEventListeners() {
     
     // Sélection du dossier de destination
     browseFolderBtn.addEventListener('click', selectDestinationFolder);
+    
+    // Changement de thème
+    themeToggle.addEventListener('click', toggleTheme);
 }
 
 // Sélection du dossier de destination
@@ -165,9 +232,9 @@ function validateYouTubeUrl() {
     }
     
     // Vérification des URLs YouTube standard (youtu.be et youtube.com/watch)
-    const shortUrlRegex = /^(https?:\/\/)?(www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(&.*)?$/;
-    const watchUrlRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/watch.*[?&]v=([a-zA-Z0-9_-]{11})(&.*)?$/;
-    const playlistRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/playlist\?list=([a-zA-Z0-9_-]+)(&.*)?$/;
+    const shortUrlRegex = /^(https?:\/\/)?(www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:&.*)?(?:#.*)?$/;
+    const watchUrlRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/watch.*[?&]v=([a-zA-Z0-9_-]{11})(?:&.*)?(?:#.*)?$/;
+    const playlistRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/playlist\?list=([a-zA-Z0-9_-]+)(?:&.*)?(?:#.*)?$/;
     
     if (playlistRegex.test(url)) {
         urlError.textContent = 'Les playlists ne sont pas supportées. Veuillez entrer une URL de vidéo unique.';
@@ -200,7 +267,8 @@ function extractVideoId(url) {
     }
     
     // Ensuite vérifier le format youtube.com/watch?v=
-    let watchUrlRegex = /[?&]v=([a-zA-Z0-9_-]{11})(&.*)?$/;
+    // Utiliser une expression régulière plus robuste pour extraire l'ID vidéo
+    let watchUrlRegex = /[?&]v=([a-zA-Z0-9_-]{11})(?:&.*)?(?:#.*)?$/;
     match = url.match(watchUrlRegex);
     if (match) {
         return match[1]; // L'ID est dans le groupe 1 pour ce format
@@ -217,15 +285,8 @@ async function fetchVideoInfo() {
     }
     
     const url = videoUrlInput.value.trim();
-    const videoId = extractVideoId(url);
     
-    if (!videoId) {
-        showError('Impossible d\'extraire l\'ID de la vidéo. Vérifiez que l\'URL est correcte.');
-        return;
-    }
-    
-    // Simuler la récupération des informations de la vidéo
-    // Dans une application réelle, cela serait fait via une API
+    // Simuler la récupération des informations de la vidéo via le backend
     try {
         showStatus('Récupération des informations de la vidéo...', 'warning');
         
@@ -234,11 +295,15 @@ async function fetchVideoInfo() {
             throw new Error('Pas de connexion Internet. Veuillez vérifier votre connexion et réessayer.');
         }
         
-        // Simulation d'un appel API
-        await simulateApiCall();
+        // Appel à l'API backend pour récupérer les informations de la vidéo
+        const response = await fetch(`http://localhost:3001/api/video-info?url=${encodeURIComponent(url)}`);
         
-        // Récupérer les informations de la vidéo via l'API YouTube
-        const videoInfo = await fetchYouTubeVideoInfo(videoId);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erreur lors de la récupération des informations');
+        }
+        
+        const videoInfo = await response.json();
         
         if (!videoInfo) {
             throw new Error('Impossible de récupérer les informations de la vidéo. Veuillez réessayer.');
@@ -478,13 +543,65 @@ async function startDownload() {
         // Afficher le message de démarrage avec le dossier de destination
         showStatus(`Préparation du téléchargement vers ${destinationFolder}...`, 'warning');
         
-        // Simuler le téléchargement
-        await simulateDownload(videoId, format, quality, filename, destinationFolder);
+        // Construire l'URL de téléchargement pour le backend
+        const downloadUrl = `http://localhost:3001/api/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&filename=${encodeURIComponent(filename)}`;
+        
+        // Créer un lien temporaire pour le téléchargement
+        const downloadLink = document.createElement('a');
+        downloadLink.href = downloadUrl;
+        downloadLink.download = `${filename}.${format}`;
+        
+        // Simuler la progression du téléchargement
+        const progressInterval = simulateProgressUpdates();
+        
+        // Déclencher le téléchargement
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Simuler la fin du téléchargement après un délai
+        setTimeout(() => {
+            // Arrêter la simulation de progression
+            clearInterval(progressInterval);
+            
+            // Compléter la barre de progression
+            downloadProgress.style.width = '100%';
+            progressPercentage.textContent = '100%';
+            timeRemaining.textContent = 'Terminé';
+            
+            // Appeler la fonction de fin de téléchargement
+            downloadComplete(videoId, format, filename, destinationFolder);
+            
+            // Réactiver le bouton de téléchargement
+            downloadBtn.disabled = false;
+        }, 3000);
     } catch (error) {
         console.error('Erreur lors du démarrage du téléchargement:', error);
         showError(`Erreur lors du démarrage du téléchargement: ${error.message}`);
         downloadBtn.disabled = false;
     }
+}
+
+// Simuler les mises à jour de progression
+function simulateProgressUpdates() {
+    let progress = 0;
+    return setInterval(() => {
+        // Augmenter la progression de manière aléatoire
+        progress += Math.random() * 5;
+        if (progress > 95) {
+            progress = 95; // Laisser le 100% pour la fin du téléchargement
+        }
+        
+        // Mettre à jour l'interface
+        const progressValue = Math.floor(progress);
+        downloadProgress.style.width = `${progressValue}%`;
+        progressPercentage.textContent = `${progressValue}%`;
+        
+        // Calculer le temps restant
+        const remainingPercentage = 100 - progressValue;
+        const estimatedSecondsRemaining = remainingPercentage / 5;
+        timeRemaining.textContent = formatTime(estimatedSecondsRemaining);
+    }, 500);
 }
 
 // Vérifier et créer le dossier de destination s'il n'existe pas
@@ -582,6 +699,23 @@ async function simulateDownload(videoId, format, quality, filename, destinationF
             
             // Formater le temps restant
             timeRemaining.textContent = `Estimation: ${formatTime(remainingTime)}`;
+            
+            // Mettre à jour les statistiques de téléchargement
+            const downloadSpeedElement = document.getElementById('download-speed');
+            const fileSizeElement = document.getElementById('file-size');
+            const downloadedSizeElement = document.getElementById('downloaded-size');
+            
+            if (downloadSpeedElement && fileSizeElement && downloadedSizeElement) {
+                // Afficher la vitesse de téléchargement
+                downloadSpeedElement.textContent = `${downloadSpeed.toFixed(1)} MB/s`;
+                
+                // Afficher la taille totale du fichier
+                fileSizeElement.textContent = `${totalSize.toFixed(1)} MB`;
+                
+                // Calculer et afficher la quantité téléchargée
+                const downloadedSize = (progress / 100) * totalSize;
+                downloadedSizeElement.textContent = `${downloadedSize.toFixed(1)} MB`;
+            }
             
             // Mettre à jour le message de statut
             showStatus(`Téléchargement en cours: ${Math.round(progress)}%`, 'warning');
@@ -718,7 +852,7 @@ function displayDownloadHistory(history) {
     // Ajouter un bouton pour effacer tout l'historique
     const clearButtonHTML = `
         <div class="clear-history-container">
-            <button id="clear-history-btn" onclick="clearDownloadHistory()">
+            <button id="clear-history-btn" onclick="showClearHistoryModal()">
                 <i class="fas fa-trash-alt"></i> Effacer tout l'historique
             </button>
         </div>
@@ -798,6 +932,66 @@ function deleteDownload(element) {
     }
 }
 
+// Afficher la modale de confirmation pour effacer l'historique
+function showClearHistoryModal() {
+    // Vérifier s'il y a des téléchargements à supprimer
+    const historyItems = downloadHistory.querySelectorAll('.history-item');
+    if (historyItems.length === 0) {
+        showStatus('L\'historique est déjà vide', 'info');
+        return;
+    }
+    
+    // Créer l'overlay et la modale
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal';
+    
+    // Ajouter le contenu de la modale
+    modal.innerHTML = `
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirmation</h3>
+            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer tout l'historique des téléchargements ?</p>
+            <p class="modal-warning">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-cancel-btn">Annuler</button>
+            <button class="modal-confirm-btn">Confirmer</button>
+        </div>
+    `;
+    
+    // Ajouter la modale à l'overlay et l'overlay au body
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Gérer les événements de la modale
+    const closeBtn = modal.querySelector('.modal-close-btn');
+    const cancelBtn = modal.querySelector('.modal-cancel-btn');
+    const confirmBtn = modal.querySelector('.modal-confirm-btn');
+    
+    // Fermer la modale
+    const closeModal = () => {
+        document.body.removeChild(overlay);
+    };
+    
+    // Événements pour fermer la modale
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    
+    // Événement pour confirmer la suppression
+    confirmBtn.addEventListener('click', () => {
+        closeModal();
+        clearDownloadHistory();
+    });
+}
+
 // Supprimer tous les téléchargements de l'historique
 function clearDownloadHistory() {
     // Vérifier s'il y a des téléchargements à supprimer
@@ -806,9 +1000,6 @@ function clearDownloadHistory() {
         showStatus('L\'historique est déjà vide', 'info');
         return;
     }
-    
-    // Demander confirmation à l'utilisateur
-    if (confirm('Êtes-vous sûr de vouloir supprimer tout l\'historique des téléchargements ?')) {
         // Animer la suppression de tous les éléments
         historyItems.forEach((item, index) => {
             // Animer avec un délai progressif pour un effet cascade
@@ -830,5 +1021,46 @@ function clearDownloadHistory() {
             // Afficher un message de confirmation
             showStatus('Historique des téléchargements effacé', 'success');
         }, historyItems.length * 50 + 300);
+    }
+
+// Vider le cache de l'application
+function clearAppCache() {
+    console.log("Fonction clearAppCache appelée");
+    
+    try {
+        // Vider le localStorage (sauf le thème)
+        const currentTheme = localStorage.getItem('theme');
+        localStorage.clear();
+        
+        // Restaurer le thème
+        if (currentTheme) {
+            localStorage.setItem('theme', currentTheme);
+        }
+        
+        // Vider l'historique des téléchargements dans l'interface
+        const historyElement = document.getElementById('download-history');
+        if (historyElement) {
+            historyElement.innerHTML = '<p class="empty-history">Aucun téléchargement récent</p>';
+        } else {
+            console.error("Élément download-history non trouvé");
+        }
+        
+        // Réinitialiser les champs de formulaire
+        const urlInput = document.getElementById('video-url');
+        if (urlInput) urlInput.value = '';
+        
+        const videoInfo = document.getElementById('video-info');
+        if (videoInfo) videoInfo.style.display = 'none';
+        
+        const downloadSection = document.getElementById('download-section');
+        if (downloadSection) downloadSection.style.display = 'none';
+        
+        // Afficher un message de confirmation
+        showStatus('Cache de l\'application vidé avec succès', 'success');
+        
+        console.log("Cache vidé avec succès");
+    } catch (error) {
+        console.error("Erreur lors du vidage du cache:", error);
+        showStatus('Erreur lors du vidage du cache', 'error');
     }
 }

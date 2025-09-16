@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <button id="theme-toggle" class="theme-toggle" title="Changer de thème">
+        <i class="fas fa-moon"></i>
+    </button>
     <div class="container">
         <header>
             <h1><i class="fab fa-youtube"></i> YouTube Downloader</h1>
@@ -17,8 +20,18 @@
         <main>
             <section class="input-section">
                 <div class="url-input-container">
-                    <input type="text" id="video-url" placeholder="Collez l'URL de la vidéo YouTube ici..." autocomplete="off">
+                    <input type="text" id="video-url" placeholder="Collez l'URL de la vidéo ou playlist YouTube ici..." autocomplete="off">
                     <button id="fetch-btn"><i class="fas fa-search"></i> Récupérer</button>
+                </div>
+                <div class="url-type-container">
+                    <label class="url-type">
+                        <input type="radio" name="url-type" value="video" checked>
+                        <span>Vidéo unique</span>
+                    </label>
+                    <label class="url-type">
+                        <input type="radio" name="url-type" value="playlist">
+                        <span>Playlist</span>
+                    </label>
                 </div>
                 <div class="error-message" id="url-error"></div>
             </section>
@@ -73,10 +86,29 @@
                     </div>
                 </div>
                 <div class="status-message" id="status-message">Prêt à télécharger</div>
+                <div class="download-stats" id="download-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Vitesse:</span>
+                        <span class="stat-value" id="download-speed">-- MB/s</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Taille:</span>
+                        <span class="stat-value" id="file-size">-- MB</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Téléchargé:</span>
+                        <span class="stat-value" id="downloaded-size">-- MB</span>
+                    </div>
+                </div>
             </section>
 
             <section class="history-section">
-                <h2>Historique des téléchargements</h2>
+                <div class="history-header">
+                    <h2>Historique des téléchargements</h2>
+                    <button id="clear-cache-btn" class="action-btn" title="Vider le cache">
+                        <i class="fas fa-trash"></i> Vider le cache
+                    </button>
+                </div>
                 <div class="history-container" id="download-history">
                     <!-- L'historique des téléchargements sera affiché ici -->
                     <p class="empty-history">Aucun téléchargement récent</p>
@@ -88,6 +120,24 @@
             <p>Cette application utilise l'API YouTube pour récupérer les informations des vidéos.</p>
             <p>Développé avec <i class="fas fa-heart"></i> | <span id="current-year"></span></p>
         </footer>
+    </div>
+
+    <!-- Modale pour vider le cache -->
+    <div id="clear-cache-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vider le cache</h3>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir vider le cache de l'application ?</p>
+                <p>Cette action effacera l'historique des téléchargements et réinitialisera l'interface.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-clear-cache" class="dialog-cancel-btn">Annuler</button>
+                <button id="confirm-clear-cache" class="download-btn">Confirmer</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
